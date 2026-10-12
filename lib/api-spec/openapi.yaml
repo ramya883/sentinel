@@ -1,0 +1,502 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication and session operations
+  - name: dashboard
+    description: Security overview operations
+  - name: access-control
+    description: User roles and trust scores
+  - name: privacy
+    description: Privacy protection settings and masked data
+  - name: intrusion
+    description: Network traffic analysis
+  - name: audit
+    description: Tamper-evident security audit logs
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionUser"
+        "400":
+          description: Validation or duplicate email error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in and calculate trust
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current session user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary and recent activity
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /users:
+    get:
+      operationId: listUsers
+      tags: [access-control]
+      summary: List users with trust and risk
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserRecord"
+  /users/{id}/role:
+    patch:
+      operationId: updateUserRole
+      tags: [access-control]
+      summary: Update a user's role
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRecord"
+        "403":
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /privacy:
+    get:
+      operationId: getPrivacy
+      tags: [privacy]
+      summary: Get privacy settings and masked sample data
+      responses:
+        "200":
+          description: Privacy status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyStatus"
+    patch:
+      operationId: updatePrivacy
+      tags: [privacy]
+      summary: Update privacy level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacyUpdate"
+      responses:
+        "200":
+          description: Updated privacy status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyStatus"
+  /intrusion/analyze:
+    post:
+      operationId: analyzeTraffic
+      tags: [intrusion]
+      summary: Analyze a network traffic record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrafficInput"
+      responses:
+        "200":
+          description: Traffic analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntrusionEvent"
+  /intrusion/events:
+    get:
+      operationId: listIntrusionEvents
+      tags: [intrusion]
+      summary: List recent analyzed traffic
+      responses:
+        "200":
+          description: Intrusion events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntrusionEvent"
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List tamper-evident audit logs
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+  /audit-logs/verify:
+    post:
+      operationId: verifyAuditLogs
+      tags: [audit]
+      summary: Verify audit log hash chain
+      responses:
+        "200":
+          description: Integrity result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditIntegrity"
+components:
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    Role:
+      type: string
+      enum: [Admin, Analyst, User]
+    RiskLevel:
+      type: string
+      enum: [Low, Medium, High]
+    PrivacyLevel:
+      type: string
+      enum: [Low, Medium, High]
+    RegisterInput:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required: [username, email, password]
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+      required: [email, password]
+    SessionUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        maskedEmail:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        trustScore:
+          type: number
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+        knownDevice:
+          type: boolean
+      required: [id, username, maskedEmail, role, trustScore, riskLevel, knownDevice]
+    UserRecord:
+      allOf:
+        - $ref: "#/components/schemas/SessionUser"
+        - type: object
+          properties:
+            failedLogins:
+              type: integer
+            lastLogin:
+              type: ["string", "null"]
+            status:
+              type: string
+              enum: [Active, Review]
+          required: [failedLogins, lastLogin, status]
+    RoleUpdate:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/Role"
+      required: [role]
+    DashboardSummary:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        threatsDetected:
+          type: integer
+        highRiskEvents:
+          type: integer
+        averageTrustScore:
+          type: number
+        privacyLevel:
+          $ref: "#/components/schemas/PrivacyLevel"
+        privacyStatus:
+          type: string
+        threatDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+        riskDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"
+      required: [totalUsers, threatsDetected, highRiskEvents, averageTrustScore, privacyLevel, privacyStatus, threatDistribution, riskDistribution, recentActivity]
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        eventType:
+          type: string
+        description:
+          type: string
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+        timestamp:
+          type: string
+      required: [id, eventType, description, riskLevel, timestamp]
+    PrivacyStatus:
+      type: object
+      properties:
+        level:
+          $ref: "#/components/schemas/PrivacyLevel"
+        status:
+          type: string
+        epsilon:
+          type: number
+        maskedEmail:
+          type: string
+        maskedUsername:
+          type: string
+        maskedIp:
+          type: string
+        rawThreats:
+          type: integer
+        privateThreats:
+          type: number
+        rawAverageTrust:
+          type: number
+        privateAverageTrust:
+          type: number
+      required: [level, status, epsilon, maskedEmail, maskedUsername, maskedIp, rawThreats, privateThreats, rawAverageTrust, privateAverageTrust]
+    PrivacyUpdate:
+      type: object
+      properties:
+        level:
+          $ref: "#/components/schemas/PrivacyLevel"
+      required: [level]
+    TrafficInput:
+      type: object
+      properties:
+        duration:
+          type: number
+          minimum: 0
+        srcBytes:
+          type: number
+          minimum: 0
+        dstBytes:
+          type: number
+          minimum: 0
+        failedLogins:
+          type: integer
+          minimum: 0
+        packetCount:
+          type: integer
+          minimum: 0
+        connectionRate:
+          type: number
+          minimum: 0
+      required: [duration, srcBytes, dstBytes, failedLogins, packetCount, connectionRate]
+    IntrusionEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        duration:
+          type: number
+        srcBytes:
+          type: number
+        dstBytes:
+          type: number
+        failedLogins:
+          type: integer
+        packetCount:
+          type: integer
+        connectionRate:
+          type: number
+        classification:
+          type: string
+          enum: [Normal, Suspicious]
+        anomalyScore:
+          type: number
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+        timestamp:
+          type: string
+      required: [id, duration, srcBytes, dstBytes, failedLogins, packetCount, connectionRate, classification, anomalyScore, riskLevel, timestamp]
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        timestamp:
+          type: string
+        eventType:
+          type: string
+        riskScore:
+          type: number
+        previousHash:
+          type: string
+        currentHash:
+          type: string
+        actor:
+          type: string
+      required: [id, timestamp, eventType, riskScore, previousHash, currentHash, actor]
+    AuditIntegrity:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        checked:
+          type: integer
+        message:
+          type: string
+      required: [valid, checked, message]
+

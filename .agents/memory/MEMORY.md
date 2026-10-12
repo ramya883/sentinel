@@ -1,0 +1,1 @@
+- [Orval and Zod compatibility](orval-zod-compatibility.md) — Orval v8 output requires the Zod 4 API.

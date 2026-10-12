@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AI Privacy & Security Dashboard"
+description = "A lightweight security operations dashboard for assessing account trust, protecting sensitive data, detecting suspicious network traffic, and verifying tamper-evident audit logs."
+version = "1.0.0"
+id = "artifacts/privacy-security-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21717
+
+[services.development]
+run = "pnpm --filter @workspace/privacy-security-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/privacy-security-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/privacy-security-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21717"
+BASE_PATH = "/"
